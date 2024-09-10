@@ -6,6 +6,8 @@ p, *, /sign-in, *, allow
 p, *, /, *, allow
 p, *, /*, *, deny
 
+p, test_comment, /comment, GET, allow       # test comment
+
 g, admin, role_user_read
 g, admin, role_user_write
 

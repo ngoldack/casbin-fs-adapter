@@ -1,14 +1,30 @@
 package fsadapter
 
 import (
-	"github.com/casbin/casbin/v2/model"
-	"github.com/stretchr/testify/assert"
 	"io/fs"
 	"os"
 	"testing"
+
+	"github.com/casbin/casbin/v2"
+	"github.com/casbin/casbin/v2/model"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCasbinFsAdapter_LoadPolicy(t *testing.T) {
+	t.Run("TestCasbinFsAdapter_LoadPolicy_ShouldIgnoreComment", func(t *testing.T) {
+		fsys := os.DirFS("examples/config/")
+		adapter := NewAdapter(fsys, "policy.csv")
+
+		m, err := NewModel(fsys, "model.conf")
+		assert.NoError(t, err)
+
+		e, err := casbin.NewEnforcer(m, adapter)
+		assert.NoError(t, err)
+
+		// Check if the policy is loaded
+		loaded := e.HasPolicy("test_comment", "/comment", "GET", "allow")
+		assert.True(t, loaded)
+	})
 	t.Run("TestCasbinFsAdapter_LoadPolicy_EmptyShouldReturnError", func(t *testing.T) {
 		var err error
 		fsys := os.DirFS("examples/config/")

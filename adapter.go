@@ -13,10 +13,17 @@ import (
 type Adapter struct {
 	fsys     fs.FS
 	filePath string
+
+	comment rune
 }
 
-func NewAdapter(fsys fs.FS, filePath string) *Adapter {
-	return &Adapter{fsys, filePath}
+const defaultComment = '#'
+
+func NewAdapter(fsys fs.FS, filePath string, comment ...rune) *Adapter {
+	if len(comment) > 0 {
+		return &Adapter{fsys, filePath, comment[0]}
+	}
+	return &Adapter{fsys, filePath, defaultComment}
 }
 
 func (a *Adapter) LoadPolicy(model model.Model) error {
@@ -36,7 +43,16 @@ func (a *Adapter) loadPolicyFile(model model.Model, handler func(string, model.M
 
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
+		line := scanner.Text()
+
+		// If i == 0, it means that the line is a comment line. Ignore it.
+		// If i == -1, it means not found the comment character.
+		// If i > 0, it means that the line is a comment line, but it is not at the beginning. We should trim everything after the comment character.
+		if i := strings.IndexRune(line, a.comment); i > 0 {
+			line = line[:i]
+		}
+
+		line = strings.TrimSpace(line)
 		err = handler(line, model)
 		if err != nil {
 			return err
